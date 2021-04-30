@@ -57,8 +57,6 @@ contract patient {
     }
     
     function revokeCreatePerm(address _doc) public restricted {
-        // require(!canCreate[_doc]);
-        
         canCreate[_doc] = false;
     }
     
