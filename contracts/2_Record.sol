@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-contract record {
+contract Record {
     
     string ownerPatient;
     string creatorDoctor;
