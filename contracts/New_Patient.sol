@@ -63,7 +63,7 @@ contract patient {
     }
     
     function viewRecord(uint _id) public view returns(string memory){
-          Record storage record = records[indices[_id]];
+        Record storage record = records[indices[_id]];
         require(record.canView[msg.sender], "You dont have permission");
         return record.description;
     }
