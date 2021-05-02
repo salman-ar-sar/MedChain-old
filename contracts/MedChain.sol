@@ -27,7 +27,7 @@ contract Doctor {
     }
     
     function createPatient(address _patient) public restricted {
-        address newPatient = new Patient(_patient, true);
+        address newPatient = new Patient(_patient, true, ownerDoctor);
         patients.push(newPatient);
     }
     
@@ -40,7 +40,7 @@ contract PatienFactory {
     address[] patients;
     
     function createPatient() public {
-        address newPatient = new Patient(msg.sender, false);
+        address newPatient = new Patient(msg.sender, false, 0x00);
         patients.push(newPatient);
     }
     
@@ -64,11 +64,11 @@ contract Patient {
     mapping (address => bool) canCreate;
     // Record record;
     
-    constructor (address _owner, bool _isdoc) public {
+    constructor (address _owner, bool _isdoc, address _doc) public {
         ownerPatient = _owner;
         noOfRecords = 0;
         if (_isdoc == true) {
-            canCreate[msg.sender] = true;
+            canCreate[_doc] = true;
         }
     }
     
