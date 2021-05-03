@@ -1,55 +1,6 @@
-pragma solidity ^0.4.17;
+pragma solidity ^0.5.0;
 
-contract DoctorFactory {
-    address[] doctors;
-    
-    function createDoctor() public {
-        address newDoctor = new Doctor(msg.sender);
-        doctors.push(newDoctor);
-    }
-    
-    function getDoctors() public view returns (address[] memory) {
-        return doctors;
-    }
-}
-
-contract Doctor {
-    address public ownerDoctor;
-    address[] patients;
-    
-    constructor (address _owner) public {
-        ownerDoctor = _owner;
-    }
-    
-    modifier restricted() {
-        require(msg.sender == ownerDoctor);
-        _;
-    }
-    
-    function createPatient(address _patient) public restricted {
-        address newPatient = new Patient(_patient, true, ownerDoctor);
-        patients.push(newPatient);
-    }
-    
-    function getPatients() public view returns (address[] memory) {
-        return patients;
-    }
-}
-
-contract PatienFactory {
-    address[] patients;
-    
-    function createPatient() public {
-        address newPatient = new Patient(msg.sender, false, 0x00);
-        patients.push(newPatient);
-    }
-    
-    function getPatients() public view returns (address[] memory) {
-        return patients;
-    }
-}
-
-contract Patient {
+contract patient {
     struct Record {
         uint recordID;
         address creatorDoc;
@@ -58,18 +9,14 @@ contract Patient {
     }
     
     address public ownerPatient;
-    Record[] records;
+    Record[] public records;
     mapping (uint => uint) indices;
     uint noOfRecords;
     mapping (address => bool) canCreate;
-    // Record record;
     
-    constructor (address _owner, bool _isdoc, address _doc) public {
-        ownerPatient = _owner;
+    constructor () public {
+        ownerPatient = msg.sender;
         noOfRecords = 0;
-        if (_isdoc == true) {
-            canCreate[_doc] = true;
-        }
     }
     
     modifier restricted() {
@@ -77,34 +24,34 @@ contract Patient {
         _;
     }
     
-    function createRecord(uint _id, string memory _desc) public {
+    function createRecord(uint _id, address _doc, string memory _desc) public {
         require(canCreate[msg.sender], "You dont have permission!");
         Record memory record = Record({
             recordID: _id,
-            creatorDoc: msg.sender,
+            creatorDoc: _doc,
             description: _desc
         });
-        // record.canView[msg.sender] = true;
+        
         records.push(record); 
         indices[_id] = noOfRecords;
         noOfRecords++;
     }
     
-    function giveViewPerm(uint _id, address _doc) public restricted {
+    function giveViewPerm(uint _id) public restricted {
         Record storage record = records[indices[_id]];
         require(!record.canView[msg.sender], "You already have permission");
         
-        record.canView[_doc] = true;
+        record.canView[msg.sender] = true;
     }
     
-    function revokeViewPerm(uint _id, address _doc) public restricted {
+    function revokeViewPerm(uint _id) public restricted {
         Record storage record = records[indices[_id]];
         
-        record.canView[_doc] = false;
+        record.canView[msg.sender] = false;
     }
     
     function giveCreatePerm(address _doc) public restricted {
-        require(!canCreate[_doc], "You dont have permission");
+        require(!canCreate[_doc]);
         
         canCreate[_doc] = true;
     }
@@ -113,9 +60,9 @@ contract Patient {
         canCreate[_doc] = false;
     }
     
-    function viewRecord(uint _id) public view returns(uint, address, string memory){
+    function viewRecord(uint _id) public view returns(string memory){
         Record storage record = records[indices[_id]];
-        require(record.canView[msg.sender] || msg.sender == record.creatorDoc, "You dont have permission");
-        return (record.recordID, record.creatorDoc, record.description);
+        require(record.canView[msg.sender], "You dont have permission");
+        return record.description;
     }
 }
