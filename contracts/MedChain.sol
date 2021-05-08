@@ -1,8 +1,6 @@
 pragma solidity ^0.4.26;
 
 contract UserFactory {
-    // address[] doctors;
-    // address[] patients;
     mapping (address => address) patientsAddress;
     mapping (address => address) doctorsAddress;
     mapping (address => address) public addressPatients;
@@ -15,20 +13,14 @@ contract UserFactory {
     
     function registerPatient() public registered {
         address newPatient = new Patient(msg.sender, false, 0x00);
-        // patients.push(newPatient);
         patientsAddress[msg.sender] = newPatient;
         addressPatients[newPatient] = msg.sender;
     }
     
     function addPatients(address _pat, address _dep) public {
-        // patients.push(_dep);
         patientsAddress[_pat] = _dep;
         addressPatients[_dep] = _pat;
     }
-    
-    // function getPatients() public view returns (address[] memory) {
-    //     return patients;
-    // }
     
     function registerDoctor() public registered {
         address newDoctor = new Doctor(msg.sender);
@@ -36,10 +28,6 @@ contract UserFactory {
         doctorsAddress[msg.sender] = newDoctor;
         addressDoctors[newDoctor] = msg.sender;
     }
-    
-    // function getDoctors() public view returns (address[] memory) {
-    //     return doctors;
-    // }
     
     function loginPatient() public view returns (address) {
         require(patientsAddress[msg.sender] != 0x0000000000000000000000000000000000000000, "Not registered as patient");
@@ -54,10 +42,13 @@ contract UserFactory {
 
 contract Doctor {
     address public ownerDoctor;
-    UserFactory factory;
+    UserFactory Ufactory;
+    address factory;
     
     constructor (address _owner) public {
         ownerDoctor = _owner;
+        factory = msg.sender;
+        Ufactory = UserFactory(factory);
     }
     
     modifier restricted() {
@@ -65,16 +56,12 @@ contract Doctor {
         _;
     }
     
-    function createPatient(address _patient,address _factory) public restricted {
+    function createPatient(address _patient) public restricted {
         address newPatient = new Patient(_patient, true, ownerDoctor);
-        factory = UserFactory(_factory);
-        factory.addPatients(_factory, newPatient);
+        
+        Ufactory.addPatients(_patient, newPatient);
     }
 }
-
-// contract ExternalUser {
-//     address 
-// }
 
 contract Patient {
     struct Record {
@@ -96,7 +83,6 @@ contract Patient {
     uint noOfRecords;
     mapping (address => bool) canCreate;
     Request[] requests;
-    // Record record;
     
     constructor (address _owner, bool _isdoc, address _doc) public {
         ownerPatient = _owner;
@@ -118,8 +104,8 @@ contract Patient {
             creatorDoc: msg.sender,
             description: _desc
         });
-        // record.canView[msg.sender] = true;
         records.push(record); 
+        records[noOfRecords].canView[msg.sender] = true;
         indices[_id] = noOfRecords;
         noOfRecords++;
     }
@@ -148,7 +134,7 @@ contract Patient {
     
     function giveCreatePerm(address _doc) public restricted {
         require(!canCreate[_doc], "You dont have permission");
-        
+    
         canCreate[_doc] = true;
     }
     
@@ -158,7 +144,7 @@ contract Patient {
     
     function viewRecord(uint _id) public view returns(uint, address, string memory){
         Record storage record = records[indices[_id]];
-        require(record.canView[msg.sender] || msg.sender == record.creatorDoc, "You dont have permission");
+        require(record.canView[msg.sender] , "You dont have permission");
         return (record.recordID, record.creatorDoc, record.description);
     }
 }
